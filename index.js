@@ -7,6 +7,9 @@ const app = express();
 db_connnect()
 app.use(express.json())
 
+app.get("/", (req, res)=>{
+    res.send("Server is running")
+})
 app.use("/api/v1", UserRoutes)
 app.use("/api/v1", expenseRoute)
 
