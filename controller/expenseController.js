@@ -3,6 +3,7 @@ const tripModel = require("../model/tripModel");
 const dividedInto = require("../model/dividedInto");
 const { default: mongoose } = require("mongoose");
 const userModel = require("../model/userModel");
+const settleModel = require("../model/settle");
 
 const allTripController = async (req, res) => {
   if (!req.user) {
@@ -147,17 +148,29 @@ const getIndIndividualGroupExpanse = async (req, res) => {
       // pay by others
       if (expanse?.splitInto?.find((item) => item.number === number)) {
         // if I included
-        const spendByDetail = await userModel.findById(spendByUserId)
+        const spendByDetail = await userModel.findById(spendByUserId);
         if (map[spendByDetail?.number]) {
           map[spendByDetail?.number] =
-            map[spendByDetail?.number] - +expanse?.amount / expanse?.splitInto.length;
+            map[spendByDetail?.number] -
+            +expanse?.amount / expanse?.splitInto.length;
         } else {
-          map[spendByDetail?.number] = 0 - +expanse?.amount / expanse?.splitInto.length;
+          map[spendByDetail?.number] =
+            0 - +expanse?.amount / expanse?.splitInto.length;
         }
       } else {
         //  if I not included
       }
     }
+  }
+
+  const allTransaction = await settleModel.find({ tripId: id });
+  for( let item of allTransaction){
+    if(item.sendBy === number){  //send by me
+      map[item.receiveBy] = +map[item.receiveBy] + +item.amount
+    }
+    if(item.receiveBy === number){ //send by others
+      map[item.sendBy] = +map[item.sendBy] - +item.amount
+    } 
   }
   res.send(map);
 };
