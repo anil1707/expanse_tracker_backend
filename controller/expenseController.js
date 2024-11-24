@@ -24,14 +24,14 @@ const allTripController = async (req, res) => {
 
 const addNewTrip = async (req, res) => {
   if (!req.user) {
-    return res.json({ message: "Unauthorized user" });
+    return res.json({ message: "Unauthorized user", success: false });
   }
   const { place, country, friends } = req.body;
   if (place === "" || country === "") {
-    return res.json({ message: "Please fill Name and Place!" });
+    return res.json({ message: "Please fill Name and Place!", success: false });
   }
   if (friends.length < 1) {
-    return res.json({ message: "Please add atleast one Friend!" });
+    return res.json({ message: "Please add atleast one Friend!", success: false });
   }
   try {
     const collection = await tripModel({
@@ -41,7 +41,7 @@ const addNewTrip = async (req, res) => {
       friends: [...friends, { number: req.user.number }],
     });
     const result = await collection.save();
-    res.send({ message: "Trip Added Successfully!" });
+    res.send({ message: "Trip Added Successfully!", success: true });
   } catch (err) {
     console.log(err);
   }
@@ -65,13 +65,13 @@ const addExpense = async (req, res) => {
   const user = req.user;
 
   if (!user) {
-    return res.json({ message: "Unauthorized user" });
+    return res.json({ message: "Unauthorized user", success: false });
   }
   if (title === "" || amount === "") {
-    return res.json({ message: "Please fill Description and Amount!" });
+    return res.json({ message: "Please fill Description and Amount!", success: false });
   }
   if (!trip) {
-    return res.json({ message: "No trip found!" });
+    return res.json({ message: "No trip found!", success: false });
   }
 
   const splitInto = friends.filter((friend) => friend?.isChecked);
@@ -117,10 +117,10 @@ const addExpense = async (req, res) => {
       await fn(friend);
     }
 
-    res.send({ message: "Expense Added Successfully!" });
+    res.send({ message: "Expense Added Successfully!", success: true });
   } catch (err) {
     console.log(err);
-    res.status(500).send({ message: "Server Error!" });
+    res.status(500).send({ message: "Server Error!", success: false });
   }
 };
 

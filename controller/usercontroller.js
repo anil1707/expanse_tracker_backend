@@ -28,15 +28,18 @@ const loginController = async (req, res) => {
 const signupController = async (req, res) => {
   const { number, password, username } = req.body;
   if (number === "" || password === "" || username === "") {
-    return res.json({ message: "Please please all field" });
+    return res.json({ message: "Please fill all field", success: false });
+  }
+  if(number.length !== 10){
+    return res.json({ message: "Please enter a valid number", success: false });
   }
   const existUser = await userModel.findOne({ number });
   if (existUser) {
-    return res.json({ message: "User already exist, Please login!" });
+    return res.json({ message: "User already exist, Please login!", success: false });
   }
   const collection = await userModel({ number, password, name: username });
   const result = await collection.save();
-  res.send({ message: "Register Successfully" });
+  res.send({ message: "Register Successfully", success: true });
 };
 
 const profileController = async (req, res) => {
