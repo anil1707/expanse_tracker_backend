@@ -31,7 +31,10 @@ const addNewTrip = async (req, res) => {
     return res.json({ message: "Please fill Name and Place!", success: false });
   }
   if (friends.length < 1) {
-    return res.json({ message: "Please add atleast one Friend!", success: false });
+    return res.json({
+      message: "Please add atleast one Friend!",
+      success: false,
+    });
   }
   try {
     const collection = await tripModel({
@@ -68,7 +71,10 @@ const addExpense = async (req, res) => {
     return res.json({ message: "Unauthorized user", success: false });
   }
   if (title === "" || amount === "") {
-    return res.json({ message: "Please fill Description and Amount!", success: false });
+    return res.json({
+      message: "Please fill Description and Amount!",
+      success: false,
+    });
   }
   if (!trip) {
     return res.json({ message: "No trip found!", success: false });
@@ -124,6 +130,57 @@ const addExpense = async (req, res) => {
   }
 };
 
+const addExpanseByUnequal = async (req, res) => {
+  const { expanseArr, trip, title, amount } = req?.body;
+  console.log("req", req.body);
+  try {
+    const collection = await expenseModel({
+      title,
+      amount,
+      spendBy: req.user?._id,
+      trip,
+      splitInto: expanseArr,
+    });
+    const result = await collection.save();
+    // add expanse into divided into table
+    const fn = async (friend) => {
+      if (friend.isChecked) {
+        let obj = {
+          number: friend?.number,
+          amount: friend?.amount,
+          expense: result._id,
+        };
+
+        const groupDetail = await tripModel.findOne({ _id: trip });
+
+        for (const item of groupDetail?.friends) {
+          if (item._id.equals(friend._id)) {
+            let newTotal = item.total + +amount / splitInto.length;
+
+            await tripModel.findOneAndUpdate(
+              { _id: trip, "friends._id": item._id },
+              { $set: { "friends.$.total": newTotal } },
+              { new: true }
+            );
+          }
+        }
+
+        const collection = await dividedInto(obj);
+        await collection.save();
+      }
+    };
+
+    for (const friend of expanseArr) {
+      await fn(friend);
+    }
+
+    res.send({ message: "Expense Added Successfully!", success: true });
+  } catch (error) {
+    console.log(err);
+    res.status(500).send({ message: "Server Error!", success: false });
+  }
+};
+
 const getIndIndividualGroupExpanse = async (req, res) => {
   const { id } = req.params;
   const { number, _id } = req.user;
@@ -164,13 +221,15 @@ const getIndIndividualGroupExpanse = async (req, res) => {
   }
 
   const allTransaction = await settleModel.find({ tripId: id });
-  for( let item of allTransaction){
-    if(item.sendBy === number){  //send by me
-      map[item.receiveBy] = +map[item.receiveBy] + +item.amount
+  for (let item of allTransaction) {
+    if (item.sendBy === number) {
+      //send by me
+      map[item.receiveBy] = +map[item.receiveBy] + +item.amount;
     }
-    if(item.receiveBy === number){ //send by others
-      map[item.sendBy] = +map[item.sendBy] - +item.amount
-    } 
+    if (item.receiveBy === number) {
+      //send by others
+      map[item.sendBy] = +map[item.sendBy] - +item.amount;
+    }
   }
   res.send(map);
 };
@@ -181,4 +240,5 @@ module.exports = {
   expense,
   addExpense,
   getIndIndividualGroupExpanse,
+  addExpanseByUnequal,
 };

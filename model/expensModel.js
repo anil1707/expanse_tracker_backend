@@ -13,7 +13,12 @@ const expenseSchema = new mongoose.Schema(
     spendBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     splitInto: [
       {
-        number: { type: String, required: true },
+        number: {
+          type: String,
+          required: true,
+        },
+        equally: Boolean,
+        amount: { type: String },
       },
     ],
     trip: { type: mongoose.Schema.Types.ObjectId, ref: "Trip" },
